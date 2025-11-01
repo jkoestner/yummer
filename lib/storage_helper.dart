@@ -7,12 +7,16 @@ class StorageHelper {
 
   static const String _entriesBoxName = 'food_entries';
   static const String _goalsBoxName = 'daily_goals';
+  static const String _customFoodsBoxName = 'custom_foods';
+  static const String _customRecipesBoxName = 'custom_recipes';
 
   // Initialize Hive - call this in main() before runApp()
   static Future<void> init() async {
     await Hive.initFlutter();
     await Hive.openBox(_entriesBoxName);
     await Hive.openBox(_goalsBoxName);
+    await Hive.openBox(_customFoodsBoxName);
+    await Hive.openBox(_customRecipesBoxName);
   }
 
   Box get _entriesBox => Hive.box(_entriesBoxName);
@@ -85,5 +89,43 @@ class StorageHelper {
     await _entriesBox.clear();
     await _goalsBox.clear();
     print('All data cleared');
+  }
+
+  // Theme mode storage
+  Future<String?> getThemeMode() async {
+    try {
+      return _goalsBox.get('theme_mode');
+    } catch (e) {
+      print('Error loading theme mode: $e');
+      return null;
+    }
+  }
+
+  Future<void> setThemeMode(String mode) async {
+    try {
+      await _goalsBox.put('theme_mode', mode);
+      print('Theme mode saved: $mode');
+    } catch (e) {
+      print('Error saving theme mode: $e');
+    }
+  }
+
+  // USDA API key storage
+  Future<String?> getUSDAApiKey() async {
+    try {
+      return _goalsBox.get('usda_api_key');
+    } catch (e) {
+      print('Error loading USDA API key: $e');
+      return null;
+    }
+  }
+
+  Future<void> setUSDAApiKey(String apiKey) async {
+    try {
+      await _goalsBox.put('usda_api_key', apiKey);
+      print('USDA API key saved');
+    } catch (e) {
+      print('Error saving USDA API key: $e');
+    }
   }
 }

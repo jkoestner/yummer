@@ -9,12 +9,16 @@ import 'models.dart';
 import 'storage_helper.dart';
 import 'add_food_sheet.dart';
 import 'settings_page.dart';
+import 'usda_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Hive
   await StorageHelper.init();
+
+  // Initialize USDA service (loads API key from storage)
+  await USDAService.init();
 
   OpenFoodAPIConfiguration.userAgent = UserAgent(
     name: 'Nutrition Tracker',
@@ -27,21 +31,74 @@ void main() async {
   runApp(const NutritionTrackerApp());
 }
 
-class NutritionTrackerApp extends StatelessWidget {
+class NutritionTrackerApp extends StatefulWidget {
   const NutritionTrackerApp({Key? key}) : super(key: key);
+
+  @override
+  State<NutritionTrackerApp> createState() => _NutritionTrackerAppState();
+}
+
+class _NutritionTrackerAppState extends State<NutritionTrackerApp> {
+  ThemeMode _themeMode = ThemeMode.system;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadThemePreference();
+  }
+
+  Future<void> _loadThemePreference() async {
+    final themeString = await StorageHelper.instance.getThemeMode();
+    setState(() {
+      _themeMode = _themeModeFromString(themeString);
+    });
+  }
+
+  ThemeMode _themeModeFromString(String? value) {
+    switch (value) {
+      case 'light':
+        return ThemeMode.light;
+      case 'dark':
+        return ThemeMode.dark;
+      default:
+        return ThemeMode.system;
+    }
+  }
+
+  void _changeTheme(ThemeMode mode) {
+    setState(() {
+      _themeMode = mode;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Nutrition Tracker',
-      theme: ThemeData(primarySwatch: Colors.green, useMaterial3: true),
-      home: const HomePage(),
+      themeMode: _themeMode,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.green,
+          brightness: Brightness.light,
+        ),
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.green,
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+      ),
+      home: HomePage(onThemeChanged: _changeTheme),
     );
   }
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  final Function(ThemeMode) onThemeChanged;
+
+  const HomePage({Key? key, required this.onThemeChanged}) : super(key: key);
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -166,7 +223,10 @@ class _HomePageState extends State<HomePage> {
               await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => SettingsPage(goals: goals),
+                  builder: (context) => SettingsPage(
+                    goals: goals,
+                    onThemeChanged: widget.onThemeChanged,
+                  ),
                 ),
               );
               await _loadData();
@@ -180,7 +240,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 // Date Selector
                 Container(
-                  color: Colors.green[50],
+                  color: Theme.of(context).colorScheme.primaryContainer,
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -344,7 +404,7 @@ class _HomePageState extends State<HomePage> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey[700],
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                 ),
               ),
             ],
@@ -415,7 +475,10 @@ class _HomePageState extends State<HomePage> {
           children: [
             Text(
               label,
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodySmall?.color,
+                fontSize: 12,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
@@ -425,7 +488,7 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 8),
             LinearProgressIndicator(
               value: percentage / 100,
-              backgroundColor: Colors.grey[200],
+              backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
               valueColor: AlwaysStoppedAnimation<Color>(color),
             ),
           ],

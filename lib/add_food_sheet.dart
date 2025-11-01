@@ -3,8 +3,11 @@ import 'package:openfoodfacts/openfoodfacts.dart';
 
 import 'models.dart';
 import 'mealie_service.dart';
+import 'custom_food_scanner.dart';
+import 'custom_foods_tab.dart';
+import 'custom_recipes_tab.dart';
 
-// Main Add Food Sheet with Tabs
+// Main Add Food Sheet with 5 Tabs
 class AddFoodSheet extends StatefulWidget {
   final Function(FoodEntry) onAdd;
   final DateTime selectedDate;
@@ -26,7 +29,7 @@ class _AddFoodSheetState extends State<AddFoodSheet>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -49,15 +52,31 @@ class _AddFoodSheetState extends State<AddFoodSheet>
           const SizedBox(height: 16),
           TabBar(
             controller: _tabController,
+            isScrollable: true,
             tabs: const [
+              Tab(icon: Icon(Icons.camera_alt), text: 'Scan Label'),
+              Tab(icon: Icon(Icons.bookmark), text: 'My Foods'),
+              Tab(icon: Icon(Icons.restaurant_menu), text: 'My Recipes'),
               Tab(icon: Icon(Icons.public), text: 'Open Food Facts'),
-              Tab(icon: Icon(Icons.menu_book), text: 'Mealie Recipes'),
+              Tab(icon: Icon(Icons.menu_book), text: 'Mealie'),
             ],
           ),
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
+                NutritionLabelScanner(
+                  onAdd: widget.onAdd,
+                  selectedDate: widget.selectedDate,
+                ),
+                CustomFoodsTab(
+                  onAdd: widget.onAdd,
+                  selectedDate: widget.selectedDate,
+                ),
+                CustomRecipesTab(
+                  onAdd: widget.onAdd,
+                  selectedDate: widget.selectedDate,
+                ),
                 OpenFoodFactsTab(
                   onAdd: widget.onAdd,
                   selectedDate: widget.selectedDate,
@@ -75,7 +94,7 @@ class _AddFoodSheetState extends State<AddFoodSheet>
   }
 }
 
-// Open Food Facts Tab
+// Open Food Facts Tab (unchanged from original)
 class OpenFoodFactsTab extends StatefulWidget {
   final Function(FoodEntry) onAdd;
   final DateTime selectedDate;
@@ -500,13 +519,13 @@ class _OpenFoodFactsTabState extends State<OpenFoodFactsTab> {
   }
 }
 
-// Mealie Tab
+// Mealie Tab (unchanged from original)
 class MealieTab extends StatefulWidget {
   final Function(FoodEntry) onAdd;
   final DateTime selectedDate;
 
   const MealieTab({Key? key, required this.onAdd, required this.selectedDate})
-    : super(key: key);
+      : super(key: key);
 
   @override
   State<MealieTab> createState() => _MealieTabState();

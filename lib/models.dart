@@ -147,7 +147,7 @@ class FoodEntry {
   ) {
     final nutrition = recipe['nutrition'] as Map<String, dynamic>?;
     final baseServings = recipe['recipeServings'] ?? 1.0;
-    final multiplier = servings / baseServings;
+    final multiplier = servings;
 
     return FoodEntry(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
