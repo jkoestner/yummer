@@ -19,8 +19,9 @@ class RecipeBuilderPage extends StatefulWidget {
 class _RecipeBuilderPageState extends State<RecipeBuilderPage> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
-  final TextEditingController servingsController = TextEditingController(text: '1.0');
-  
+  final TextEditingController servingsController =
+      TextEditingController(text: '1.0');
+
   List<RecipeIngredient> ingredients = [];
   bool isModified = false;
 
@@ -51,10 +52,11 @@ class _RecipeBuilderPageState extends State<RecipeBuilderPage> {
     }
 
     final recipe = CustomRecipe(
-      id: widget.existingRecipe?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      id: widget.existingRecipe?.id ??
+          DateTime.now().millisecondsSinceEpoch.toString(),
       name: nameController.text.trim(),
-      description: descriptionController.text.trim().isNotEmpty 
-          ? descriptionController.text.trim() 
+      description: descriptionController.text.trim().isNotEmpty
+          ? descriptionController.text.trim()
           : null,
       ingredients: ingredients,
       servings: double.tryParse(servingsController.text) ?? 1.0,
@@ -130,7 +132,8 @@ class _RecipeBuilderPageState extends State<RecipeBuilderPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.existingRecipe == null ? 'Create Recipe' : 'Edit Recipe'),
+        title: Text(
+            widget.existingRecipe == null ? 'Create Recipe' : 'Edit Recipe'),
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
@@ -226,7 +229,7 @@ class _RecipeBuilderPageState extends State<RecipeBuilderPage> {
               ...ingredients.asMap().entries.map((entry) {
                 final index = entry.key;
                 final ingredient = entry.value;
-                
+
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
@@ -258,7 +261,8 @@ class _RecipeBuilderPageState extends State<RecipeBuilderPage> {
                           onPressed: () => _editIngredient(index),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                          icon: const Icon(Icons.delete,
+                              color: Colors.red, size: 20),
                           onPressed: () => _removeIngredient(index),
                         ),
                       ],
@@ -266,7 +270,8 @@ class _RecipeBuilderPageState extends State<RecipeBuilderPage> {
                     leading: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: _getSourceColor(ingredient.source).withOpacity(0.2),
+                        color:
+                            _getSourceColor(ingredient.source).withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -319,7 +324,8 @@ class _RecipeBuilderPageState extends State<RecipeBuilderPage> {
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.all(16),
                 ),
-                child: const Text('Save Recipe', style: TextStyle(fontSize: 16)),
+                child:
+                    const Text('Save Recipe', style: TextStyle(fontSize: 16)),
               ),
             ),
           ],
@@ -328,7 +334,8 @@ class _RecipeBuilderPageState extends State<RecipeBuilderPage> {
     );
   }
 
-  Widget _buildNutritionCard(String title, Map<String, double> nutrition, Color color) {
+  Widget _buildNutritionCard(
+      String title, Map<String, double> nutrition, Color color) {
     return Card(
       color: color.withOpacity(0.1),
       child: Padding(
@@ -387,7 +394,8 @@ class _RecipeBuilderPageState extends State<RecipeBuilderPage> {
 class AddIngredientSheet extends StatefulWidget {
   final RecipeIngredient? existingIngredient;
 
-  const AddIngredientSheet({Key? key, this.existingIngredient}) : super(key: key);
+  const AddIngredientSheet({Key? key, this.existingIngredient})
+      : super(key: key);
 
   @override
   State<AddIngredientSheet> createState() => _AddIngredientSheetState();
@@ -455,15 +463,18 @@ class _AddIngredientSheetState extends State<AddIngredientSheet>
 class CustomFoodsIngredientTab extends StatefulWidget {
   final RecipeIngredient? existingIngredient;
 
-  const CustomFoodsIngredientTab({Key? key, this.existingIngredient}) : super(key: key);
+  const CustomFoodsIngredientTab({Key? key, this.existingIngredient})
+      : super(key: key);
 
   @override
-  State<CustomFoodsIngredientTab> createState() => _CustomFoodsIngredientTabState();
+  State<CustomFoodsIngredientTab> createState() =>
+      _CustomFoodsIngredientTabState();
 }
 
 class _CustomFoodsIngredientTabState extends State<CustomFoodsIngredientTab> {
   final TextEditingController searchController = TextEditingController();
-  final TextEditingController quantityController = TextEditingController(text: '100');
+  final TextEditingController quantityController =
+      TextEditingController(text: '100');
   List<CustomFood> customFoods = [];
   List<CustomFood> filteredFoods = [];
   CustomFood? selectedFood;
@@ -474,8 +485,9 @@ class _CustomFoodsIngredientTabState extends State<CustomFoodsIngredientTab> {
   void initState() {
     super.initState();
     _loadCustomFoods();
-    
-    if (widget.existingIngredient != null && widget.existingIngredient!.source == 'custom') {
+
+    if (widget.existingIngredient != null &&
+        widget.existingIngredient!.source == 'custom') {
       quantityController.text = widget.existingIngredient!.quantity.toString();
       selectedUnit = widget.existingIngredient!.unit;
     }
@@ -546,7 +558,6 @@ class _CustomFoodsIngredientTabState extends State<CustomFoodsIngredientTab> {
             onChanged: _filterFoods,
           ),
           const SizedBox(height: 16),
-
           if (isLoading)
             const Expanded(child: Center(child: CircularProgressIndicator()))
           else if (selectedFood == null)
@@ -588,7 +599,6 @@ class _CustomFoodsIngredientTabState extends State<CustomFoodsIngredientTab> {
                       ),
                     ),
                     const SizedBox(height: 16),
-
                     Row(
                       children: [
                         Expanded(
@@ -614,9 +624,12 @@ class _CustomFoodsIngredientTabState extends State<CustomFoodsIngredientTab> {
                               DropdownMenuItem(value: 'g', child: Text('g')),
                               DropdownMenuItem(value: 'ml', child: Text('ml')),
                               DropdownMenuItem(value: 'oz', child: Text('oz')),
-                              DropdownMenuItem(value: 'cup', child: Text('cup')),
-                              DropdownMenuItem(value: 'tbsp', child: Text('tbsp')),
-                              DropdownMenuItem(value: 'tsp', child: Text('tsp')),
+                              DropdownMenuItem(
+                                  value: 'cup', child: Text('cup')),
+                              DropdownMenuItem(
+                                  value: 'tbsp', child: Text('tbsp')),
+                              DropdownMenuItem(
+                                  value: 'tsp', child: Text('tsp')),
                             ],
                             onChanged: (value) {
                               setState(() {
@@ -628,7 +641,6 @@ class _CustomFoodsIngredientTabState extends State<CustomFoodsIngredientTab> {
                       ],
                     ),
                     const SizedBox(height: 24),
-
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -655,7 +667,8 @@ class _CustomFoodsIngredientTabState extends State<CustomFoodsIngredientTab> {
 class USDAIngredientTab extends StatefulWidget {
   final RecipeIngredient? existingIngredient;
 
-  const USDAIngredientTab({Key? key, this.existingIngredient}) : super(key: key);
+  const USDAIngredientTab({Key? key, this.existingIngredient})
+      : super(key: key);
 
   @override
   State<USDAIngredientTab> createState() => _USDAIngredientTabState();
@@ -663,10 +676,11 @@ class USDAIngredientTab extends StatefulWidget {
 
 class _USDAIngredientTabState extends State<USDAIngredientTab> {
   final TextEditingController searchController = TextEditingController();
-  final TextEditingController quantityController = TextEditingController(text: '100');
+  final TextEditingController quantityController =
+      TextEditingController(text: '1.0');
   List<Map<String, dynamic>> searchResults = [];
   Map<String, dynamic>? selectedFood;
-  String selectedUnit = 'g';
+  Map<String, dynamic>? selectedServing;
   bool isSearching = false;
   bool isLoading = false;
   String? errorMessage;
@@ -674,9 +688,9 @@ class _USDAIngredientTabState extends State<USDAIngredientTab> {
   @override
   void initState() {
     super.initState();
-    if (widget.existingIngredient != null && widget.existingIngredient!.source == 'usda') {
+    if (widget.existingIngredient != null &&
+        widget.existingIngredient!.source == 'usda') {
       quantityController.text = widget.existingIngredient!.quantity.toString();
-      selectedUnit = widget.existingIngredient!.unit;
     }
   }
 
@@ -718,37 +732,46 @@ class _USDAIngredientTabState extends State<USDAIngredientTab> {
       final details = await USDAService.getFoodDetails(food['fdcId']);
       setState(() {
         selectedFood = details ?? food;
+        // Set default serving option
+        if (selectedFood!['servingOptions'] != null &&
+            (selectedFood!['servingOptions'] as List).isNotEmpty) {
+          selectedServing = (selectedFood!['servingOptions'] as List).first;
+        }
         isLoading = false;
       });
     } catch (e) {
       setState(() {
         selectedFood = food;
+        selectedServing = null;
         isLoading = false;
       });
     }
   }
 
   void _addIngredient() {
-    if (selectedFood == null) return;
+    if (selectedFood == null || selectedServing == null) return;
 
-    final quantity = double.tryParse(quantityController.text) ?? 100;
-    final servingSize = selectedFood!['servingSize'] ?? 100.0;
-    final multiplier = quantity / servingSize;
+    final quantity = double.tryParse(quantityController.text) ?? 1.0;
+    final gramWeight = selectedServing!['gramWeight'] as double;
+    final totalGrams = gramWeight * quantity;
+
+    // Calculate nutrition based on per 100g values and total grams
+    final multiplier = totalGrams / 100.0;
 
     final ingredient = RecipeIngredient(
       id: selectedFood!['fdcId'],
       name: selectedFood!['description'],
       source: 'usda',
       quantity: quantity,
-      unit: selectedUnit,
-      calories: (selectedFood!['calories'] ?? 0) * multiplier,
-      protein: (selectedFood!['protein'] ?? 0) * multiplier,
-      carbs: (selectedFood!['carbs'] ?? 0) * multiplier,
-      fat: (selectedFood!['fat'] ?? 0) * multiplier,
-      fiber: (selectedFood!['fiber'] ?? 0) * multiplier,
-      sugar: (selectedFood!['sugar'] ?? 0) * multiplier,
-      sodium: (selectedFood!['sodium'] ?? 0) * multiplier,
-      saturatedFat: (selectedFood!['saturatedFat'] ?? 0) * multiplier,
+      unit: selectedServing!['description'],
+      calories: (selectedFood!['caloriePer100g'] ?? 0) * multiplier,
+      protein: (selectedFood!['proteinPer100g'] ?? 0) * multiplier,
+      carbs: (selectedFood!['carbsPer100g'] ?? 0) * multiplier,
+      fat: (selectedFood!['fatPer100g'] ?? 0) * multiplier,
+      fiber: (selectedFood!['fiberPer100g'] ?? 0) * multiplier,
+      sugar: (selectedFood!['sugarPer100g'] ?? 0) * multiplier,
+      sodium: (selectedFood!['sodiumPer100g'] ?? 0) * multiplier,
+      saturatedFat: (selectedFood!['saturatedFatPer100g'] ?? 0) * multiplier,
     );
 
     Navigator.pop(context, ingredient);
@@ -786,11 +809,11 @@ class _USDAIngredientTabState extends State<USDAIngredientTab> {
             ],
           ),
           const SizedBox(height: 16),
-
           if (errorMessage != null)
             Expanded(
               child: Center(
-                child: Text(errorMessage!, style: const TextStyle(color: Colors.orange)),
+                child: Text(errorMessage!,
+                    style: const TextStyle(color: Colors.orange)),
               ),
             )
           else if (isSearching || isLoading)
@@ -831,41 +854,47 @@ class _USDAIngredientTabState extends State<USDAIngredientTab> {
                     ),
                     const SizedBox(height: 16),
 
-                    Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: TextField(
-                            controller: quantityController,
-                            decoration: const InputDecoration(
-                              labelText: 'Quantity',
-                              border: OutlineInputBorder(),
-                            ),
-                            keyboardType: TextInputType.number,
-                          ),
+                    // Serving size dropdown
+                    if (selectedFood!['servingOptions'] != null &&
+                        (selectedFood!['servingOptions'] as List).isNotEmpty)
+                      DropdownButtonFormField<Map<String, dynamic>>(
+                        value: selectedServing,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Serving Size',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.scale),
+                          helperText: 'Select USDA portion',
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: selectedUnit,
-                            decoration: const InputDecoration(
-                              labelText: 'Unit',
-                              border: OutlineInputBorder(),
+                        items: (selectedFood!['servingOptions'] as List)
+                            .map<DropdownMenuItem<Map<String, dynamic>>>(
+                                (serving) {
+                          return DropdownMenuItem(
+                            value: serving,
+                            child: Text(
+                              '${serving['description']} (${serving['gramWeight'].toStringAsFixed(0)}g)',
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            items: const [
-                              DropdownMenuItem(value: 'g', child: Text('g')),
-                              DropdownMenuItem(value: 'ml', child: Text('ml')),
-                              DropdownMenuItem(value: 'oz', child: Text('oz')),
-                              DropdownMenuItem(value: 'cup', child: Text('cup')),
-                            ],
-                            onChanged: (value) {
-                              setState(() {
-                                selectedUnit = value ?? 'g';
-                              });
-                            },
-                          ),
-                        ),
-                      ],
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedServing = value;
+                          });
+                        },
+                      ),
+                    const SizedBox(height: 16),
+
+                    // Quantity multiplier
+                    TextField(
+                      controller: quantityController,
+                      decoration: const InputDecoration(
+                        labelText: 'Quantity',
+                        border: OutlineInputBorder(),
+                        helperText: 'Number of servings',
+                        prefixIcon: Icon(Icons.numbers),
+                      ),
+                      keyboardType: TextInputType.number,
                     ),
                     const SizedBox(height: 24),
 
@@ -895,18 +924,23 @@ class _USDAIngredientTabState extends State<USDAIngredientTab> {
 class OpenFoodFactsIngredientTab extends StatefulWidget {
   final RecipeIngredient? existingIngredient;
 
-  const OpenFoodFactsIngredientTab({Key? key, this.existingIngredient}) : super(key: key);
+  const OpenFoodFactsIngredientTab({Key? key, this.existingIngredient})
+      : super(key: key);
 
   @override
-  State<OpenFoodFactsIngredientTab> createState() => _OpenFoodFactsIngredientTabState();
+  State<OpenFoodFactsIngredientTab> createState() =>
+      _OpenFoodFactsIngredientTabState();
 }
 
-class _OpenFoodFactsIngredientTabState extends State<OpenFoodFactsIngredientTab> {
+class _OpenFoodFactsIngredientTabState
+    extends State<OpenFoodFactsIngredientTab> {
   final TextEditingController searchController = TextEditingController();
-  final TextEditingController quantityController = TextEditingController(text: '100');
+  final TextEditingController quantityController =
+      TextEditingController(text: '1.0');
   List<Product> searchResults = [];
   Product? selectedProduct;
-  String selectedUnit = 'g';
+  Map<String, dynamic>? selectedServing;
+  List<Map<String, dynamic>> servingOptions = [];
   bool isSearching = false;
   bool isLoading = false;
   String? errorMessage;
@@ -914,9 +948,53 @@ class _OpenFoodFactsIngredientTabState extends State<OpenFoodFactsIngredientTab>
   @override
   void initState() {
     super.initState();
-    if (widget.existingIngredient != null && widget.existingIngredient!.source == 'openfoodfacts') {
+    if (widget.existingIngredient != null &&
+        widget.existingIngredient!.source == 'openfoodfacts') {
       quantityController.text = widget.existingIngredient!.quantity.toString();
-      selectedUnit = widget.existingIngredient!.unit;
+    }
+  }
+
+  void _processServingOptions(Product product) {
+    servingOptions = [];
+
+    // Always add 100g as base option
+    servingOptions.add({
+      'description': '100g',
+      'gramWeight': 100.0,
+    });
+
+    // Check for serving size from Open Food Facts
+    if (product.servingSize != null && product.servingSize!.isNotEmpty) {
+      // Try to parse serving size (e.g., "30g", "1 cup (240ml)", etc.)
+      final servingText = product.servingSize!;
+
+      // Extract grams if available
+      final gramMatch = RegExp(r'(\d+\.?\d*)\s*g').firstMatch(servingText);
+      if (gramMatch != null) {
+        final grams = double.tryParse(gramMatch.group(1)!) ?? 0;
+        if (grams > 0) {
+          servingOptions.add({
+            'description': servingText,
+            'gramWeight': grams,
+          });
+        }
+      }
+    }
+
+    // Check for serving quantity (some products have this)
+    final servingQuantity = product.servingQuantity;
+    if (servingQuantity != null && servingQuantity > 0) {
+      final description = product.servingSize ??
+          '${servingQuantity.toStringAsFixed(0)}g serving';
+      servingOptions.add({
+        'description': description,
+        'gramWeight': servingQuantity,
+      });
+    }
+
+    // Set default to first option
+    if (servingOptions.isNotEmpty) {
+      selectedServing = servingOptions.first;
     }
   }
 
@@ -942,6 +1020,8 @@ class _OpenFoodFactsIngredientTabState extends State<OpenFoodFactsIngredientTab>
           ProductField.BARCODE,
           ProductField.BRANDS,
           ProductField.NUTRIMENTS,
+          ProductField.SERVING_SIZE,
+          ProductField.SERVING_QUANTITY,
         ],
         language: OpenFoodFactsLanguage.ENGLISH,
         version: ProductQueryVersion.v3,
@@ -967,19 +1047,24 @@ class _OpenFoodFactsIngredientTabState extends State<OpenFoodFactsIngredientTab>
   }
 
   void _addIngredient() {
-    if (selectedProduct == null) return;
+    if (selectedProduct == null || selectedServing == null) return;
 
-    final quantity = double.tryParse(quantityController.text) ?? 100;
-    final multiplier = quantity / 100; // OFF data is per 100g
+    final quantity = double.tryParse(quantityController.text) ?? 1.0;
+    final gramWeight = selectedServing!['gramWeight'] as double;
+    final totalGrams = gramWeight * quantity;
+
+    // OFF data is per 100g, calculate based on total grams
+    final multiplier = totalGrams / 100.0;
 
     final nutriments = selectedProduct!.nutriments;
 
     final ingredient = RecipeIngredient(
-      id: selectedProduct!.barcode ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      id: selectedProduct!.barcode ??
+          DateTime.now().millisecondsSinceEpoch.toString(),
       name: selectedProduct!.productName ?? 'Unknown Product',
       source: 'openfoodfacts',
       quantity: quantity,
-      unit: selectedUnit,
+      unit: selectedServing!['description'],
       calories: getNutrientValue(nutriments, 'energy-kcal') * multiplier,
       protein: getNutrientValue(nutriments, 'proteins') * multiplier,
       carbs: getNutrientValue(nutriments, 'carbohydrates') * multiplier,
@@ -1025,11 +1110,11 @@ class _OpenFoodFactsIngredientTabState extends State<OpenFoodFactsIngredientTab>
             ],
           ),
           const SizedBox(height: 16),
-
           if (errorMessage != null)
             Expanded(
               child: Center(
-                child: Text(errorMessage!, style: const TextStyle(color: Colors.orange)),
+                child: Text(errorMessage!,
+                    style: const TextStyle(color: Colors.orange)),
               ),
             )
           else if (isSearching || isLoading)
@@ -1053,6 +1138,7 @@ class _OpenFoodFactsIngredientTabState extends State<OpenFoodFactsIngredientTab>
                           onTap: () {
                             setState(() {
                               selectedProduct = product;
+                              _processServingOptions(product);
                             });
                           },
                         );
@@ -1079,41 +1165,46 @@ class _OpenFoodFactsIngredientTabState extends State<OpenFoodFactsIngredientTab>
                       ),
                     const SizedBox(height: 16),
 
-                    Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: TextField(
-                            controller: quantityController,
-                            decoration: const InputDecoration(
-                              labelText: 'Quantity',
-                              border: OutlineInputBorder(),
-                              helperText: 'Amount in grams',
-                            ),
-                            keyboardType: TextInputType.number,
-                          ),
+                    // Serving size dropdown
+                    if (servingOptions.isNotEmpty)
+                      DropdownButtonFormField<Map<String, dynamic>>(
+                        value: selectedServing,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Serving Size',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.scale),
+                          helperText: 'Select portion',
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: selectedUnit,
-                            decoration: const InputDecoration(
-                              labelText: 'Unit',
-                              border: OutlineInputBorder(),
+                        items: servingOptions
+                            .map<DropdownMenuItem<Map<String, dynamic>>>(
+                                (serving) {
+                          return DropdownMenuItem(
+                            value: serving,
+                            child: Text(
+                              '${serving['description']} (${serving['gramWeight'].toStringAsFixed(0)}g)',
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            items: const [
-                              DropdownMenuItem(value: 'g', child: Text('g')),
-                              DropdownMenuItem(value: 'ml', child: Text('ml')),
-                              DropdownMenuItem(value: 'oz', child: Text('oz')),
-                            ],
-                            onChanged: (value) {
-                              setState(() {
-                                selectedUnit = value ?? 'g';
-                              });
-                            },
-                          ),
-                        ),
-                      ],
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedServing = value;
+                          });
+                        },
+                      ),
+                    const SizedBox(height: 16),
+
+                    // Quantity
+                    TextField(
+                      controller: quantityController,
+                      decoration: const InputDecoration(
+                        labelText: 'Quantity',
+                        border: OutlineInputBorder(),
+                        helperText: 'Number of servings',
+                        prefixIcon: Icon(Icons.numbers),
+                      ),
+                      keyboardType: TextInputType.number,
                     ),
                     const SizedBox(height: 24),
 

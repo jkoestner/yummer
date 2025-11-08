@@ -85,8 +85,11 @@ class USDAService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
 
-        // Extract nutrition data
+        // Extract nutrition data - USDA provides per 100g
         final nutrients = data['foodNutrients'] as List? ?? [];
+
+        // Extract food portions (serving size options)
+        final foodPortions = data['foodPortions'] as List? ?? [];
 
         // Map nutrient IDs to our needs
         // 1008 = Energy (kcal)
@@ -110,20 +113,89 @@ class USDAService {
           }
         }
 
+        // Get per 100g nutrition values (USDA default)
+        final caloriePer100g = getNutrient(1008);
+        final proteinPer100g = getNutrient(1003);
+        final carbsPer100g = getNutrient(1005);
+        final fatPer100g = getNutrient(1004);
+        final fiberPer100g = getNutrient(1079);
+        final sugarPer100g = getNutrient(2000);
+        final sodiumPer100g = getNutrient(1093) * 1000; // Convert g to mg
+        final saturatedFatPer100g = getNutrient(1258);
+
+        // Process food portions into serving options
+        List<Map<String, dynamic>> servingOptions = [];
+
+        // Always include 100g as the first option
+        servingOptions.add({
+          'amount': 100.0,
+          'unit': 'g',
+          'description': '100g',
+          'gramWeight': 100.0,
+        });
+
+        // Add serving options from USDA
+        for (var portion in foodPortions) {
+          final amount = (portion['amount'] ?? 1).toDouble();
+          final gramWeight = (portion['gramWeight'] ?? 0).toDouble();
+          final modifier = portion['modifier'] ?? '';
+          final portionDescription = portion['portionDescription'] ?? '';
+
+          if (gramWeight > 0) {
+            String description;
+            if (modifier.isNotEmpty) {
+              description =
+                  '$modifier ${amount.toStringAsFixed(0)} $portionDescription';
+            } else {
+              description = '${amount.toStringAsFixed(0)} $portionDescription';
+            }
+
+            // Clean up the description
+            description = description.trim();
+            if (description.isEmpty) {
+              description = '${gramWeight.toStringAsFixed(0)}g serving';
+            }
+
+            servingOptions.add({
+              'amount': amount,
+              'unit': portionDescription,
+              'description': description,
+              'gramWeight': gramWeight,
+            });
+          }
+        }
+
+        // Use first serving option as default
+        final defaultServing = servingOptions.first;
+        final defaultGramWeight = defaultServing['gramWeight'] as double;
+        final multiplier = defaultGramWeight / 100.0;
+
         return {
           'fdcId': data['fdcId'].toString(),
           'description': data['description'] ?? 'Unknown Food',
           'brandOwner': data['brandOwner'],
-          'servingSize': (data['servingSize'] ?? 100).toDouble(),
-          'servingSizeUnit': data['servingSizeUnit'] ?? 'g',
-          'calories': getNutrient(1008),
-          'protein': getNutrient(1003),
-          'carbs': getNutrient(1005),
-          'fat': getNutrient(1004),
-          'fiber': getNutrient(1079),
-          'sugar': getNutrient(2000),
-          'sodium': getNutrient(1093) * 1000, // Convert g to mg
-          'saturatedFat': getNutrient(1258),
+          'servingOptions': servingOptions,
+          'defaultServingSize': defaultGramWeight,
+          'defaultServingUnit': 'g',
+          'defaultServingDescription': defaultServing['description'],
+          // Nutrition for default serving
+          'calories': caloriePer100g * multiplier,
+          'protein': proteinPer100g * multiplier,
+          'carbs': carbsPer100g * multiplier,
+          'fat': fatPer100g * multiplier,
+          'fiber': fiberPer100g * multiplier,
+          'sugar': sugarPer100g * multiplier,
+          'sodium': sodiumPer100g * multiplier,
+          'saturatedFat': saturatedFatPer100g * multiplier,
+          // Keep per 100g values for recalculation
+          'caloriePer100g': caloriePer100g,
+          'proteinPer100g': proteinPer100g,
+          'carbsPer100g': carbsPer100g,
+          'fatPer100g': fatPer100g,
+          'fiberPer100g': fiberPer100g,
+          'sugarPer100g': sugarPer100g,
+          'sodiumPer100g': sodiumPer100g,
+          'saturatedFatPer100g': saturatedFatPer100g,
         };
       } else {
         throw Exception('Failed to load food details');

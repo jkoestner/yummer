@@ -34,6 +34,7 @@ flutter_*.png
 android/.gradle/
 android/app/build/
 android/local.properties
+android/key.properties
 
 # iOS
 ios/Pods/

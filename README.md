@@ -16,3 +16,12 @@ The web needs to disable web security if using mealie to avoid CORS issues.
 
 `flutter build apk --release`
 
+## publish to play store
+
+```
+dart pub add rename
+dart run rename setBundleId --value com.jkstreamin.yummer
+dart run rename setAppName --value "Yummer"
+flutter build appbundle --release
+```
+

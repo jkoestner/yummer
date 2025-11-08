@@ -6,6 +6,7 @@ import 'mealie_service.dart';
 import 'custom_food_scanner.dart';
 import 'custom_foods_tab.dart';
 import 'custom_recipes_tab.dart';
+import 'barcode_scanner_page.dart';
 
 // Main Add Food Sheet with 5 Tabs
 class AddFoodSheet extends StatefulWidget {
@@ -45,9 +46,41 @@ class _AddFoodSheetState extends State<AddFoodSheet>
       child: Column(
         children: [
           const SizedBox(height: 16),
-          const Text(
-            'Add Food',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const SizedBox(width: 48), // Spacer for centering
+              const Text(
+                'Add Food',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                icon: const Icon(Icons.qr_code_scanner),
+                tooltip: 'Scan Barcode',
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => BarcodeScannerPage(
+                        onAdd: widget.onAdd,
+                        selectedDate: widget.selectedDate,
+                      ),
+                    ),
+                  );
+
+                  if (result != null && result is Map<String, dynamic>) {
+                    // Handle scanned product
+                    if (result['source'] == 'openfoodfacts') {
+                      // Switch to OFF tab and select the product
+                      _tabController.animateTo(3); // Open Food Facts tab index
+                    } else if (result['source'] == 'usda') {
+                      // Switch to USDA tab (if you add one) or handle USDA product
+                      // For now, we'll handle it in the current implementation
+                    }
+                  }
+                },
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           TabBar(
@@ -116,10 +149,55 @@ class _OpenFoodFactsTabState extends State<OpenFoodFactsTab> {
   );
   List<Product> searchResults = [];
   Product? selectedProduct;
+  Map<String, dynamic>? selectedServing;
+  List<Map<String, dynamic>> servingOptions = [];
   MealType selectedMealType = MealType.breakfast;
   bool isLoading = false;
   bool isSearching = false;
   String? errorMessage;
+
+  void _processServingOptions(Product product) {
+    servingOptions = [];
+
+    // Always add 100g as base option
+    servingOptions.add({
+      'description': '100g',
+      'gramWeight': 100.0,
+    });
+
+    // Check for serving size from Open Food Facts
+    if (product.servingSize != null && product.servingSize!.isNotEmpty) {
+      final servingText = product.servingSize!;
+
+      // Extract grams if available
+      final gramMatch = RegExp(r'(\d+\.?\d*)\s*g').firstMatch(servingText);
+      if (gramMatch != null) {
+        final grams = double.tryParse(gramMatch.group(1)!) ?? 0;
+        if (grams > 0) {
+          servingOptions.add({
+            'description': servingText,
+            'gramWeight': grams,
+          });
+        }
+      }
+    }
+
+    // Check for serving quantity
+    final servingQuantity = product.servingQuantity;
+    if (servingQuantity != null && servingQuantity > 0) {
+      final description = product.servingSize ??
+          '${servingQuantity.toStringAsFixed(0)}g serving';
+      servingOptions.add({
+        'description': description,
+        'gramWeight': servingQuantity,
+      });
+    }
+
+    // Set default to first option
+    if (servingOptions.isNotEmpty) {
+      selectedServing = servingOptions.first;
+    }
+  }
 
   Future<void> _performSearch() async {
     final query = searchController.text.trim();
@@ -144,18 +222,20 @@ class _OpenFoodFactsTabState extends State<OpenFoodFactsTab> {
           ProductField.BRANDS,
           ProductField.IMAGE_FRONT_URL,
           ProductField.NUTRIMENTS,
+          ProductField.SERVING_SIZE,
+          ProductField.SERVING_QUANTITY,
         ],
         language: OpenFoodFactsLanguage.ENGLISH,
         version: ProductQueryVersion.v3,
       );
 
-      final result = await OpenFoodAPIClient.searchProducts(null, searchConfig)
-          .timeout(
-            const Duration(seconds: 30),
-            onTimeout: () {
-              throw Exception('Search timed out. Please try again.');
-            },
-          );
+      final result =
+          await OpenFoodAPIClient.searchProducts(null, searchConfig).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Search timed out. Please try again.');
+        },
+      );
 
       setState(() {
         if (result.products != null && result.products!.isNotEmpty) {
@@ -177,6 +257,7 @@ class _OpenFoodFactsTabState extends State<OpenFoodFactsTab> {
     if (product.barcode == null) {
       setState(() {
         selectedProduct = product;
+        _processServingOptions(product);
       });
       return;
     }
@@ -196,6 +277,8 @@ class _OpenFoodFactsTabState extends State<OpenFoodFactsTab> {
           ProductField.BRANDS,
           ProductField.IMAGE_FRONT_URL,
           ProductField.NUTRIMENTS,
+          ProductField.SERVING_SIZE,
+          ProductField.SERVING_QUANTITY,
         ],
         version: ProductQueryVersion.v3,
       );
@@ -210,14 +293,17 @@ class _OpenFoodFactsTabState extends State<OpenFoodFactsTab> {
       setState(() {
         if (result.product != null) {
           selectedProduct = result.product;
+          _processServingOptions(result.product!);
         } else {
           selectedProduct = product;
+          _processServingOptions(product);
         }
         isLoading = false;
       });
     } catch (e) {
       setState(() {
         selectedProduct = product;
+        _processServingOptions(product);
         isLoading = false;
       });
     }
@@ -255,7 +341,6 @@ class _OpenFoodFactsTabState extends State<OpenFoodFactsTab> {
             ],
           ),
           const SizedBox(height: 16),
-
           if (errorMessage != null)
             Expanded(
               child: Center(
@@ -383,9 +468,8 @@ class _OpenFoodFactsTabState extends State<OpenFoodFactsTab> {
                               Icon(
                                 mealType.icon,
                                 size: 18,
-                                color: isSelected
-                                    ? Colors.white
-                                    : mealType.color,
+                                color:
+                                    isSelected ? Colors.white : mealType.color,
                               ),
                               const SizedBox(width: 4),
                               Text(mealType.displayName),
@@ -403,12 +487,41 @@ class _OpenFoodFactsTabState extends State<OpenFoodFactsTab> {
                     ),
                     const SizedBox(height: 16),
 
+                    // Serving size dropdown
+                    if (servingOptions.isNotEmpty)
+                      DropdownButtonFormField<Map<String, dynamic>>(
+                        value: selectedServing,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Serving Size',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.scale),
+                        ),
+                        items: servingOptions
+                            .map<DropdownMenuItem<Map<String, dynamic>>>(
+                                (serving) {
+                          return DropdownMenuItem(
+                            value: serving,
+                            child: Text(
+                              '${serving['description']} (${serving['gramWeight'].toStringAsFixed(0)}g)',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedServing = value;
+                          });
+                        },
+                      ),
+                    const SizedBox(height: 16),
+
                     TextField(
                       controller: servingsController,
                       decoration: const InputDecoration(
-                        labelText: 'Servings (100g each)',
+                        labelText: 'Quantity',
                         border: OutlineInputBorder(),
-                        helperText: 'Enter number of 100g servings',
+                        helperText: 'Number of servings',
                       ),
                       keyboardType: TextInputType.number,
                     ),
@@ -457,13 +570,51 @@ class _OpenFoodFactsTabState extends State<OpenFoodFactsTab> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          final servings =
+                          if (selectedServing == null) return;
+
+                          final quantity =
                               double.tryParse(servingsController.text) ?? 1.0;
-                          final entry = FoodEntry.fromOpenFoodFacts(
-                            selectedProduct!,
-                            widget.selectedDate,
-                            servings,
-                            selectedMealType,
+                          final gramWeight =
+                              selectedServing!['gramWeight'] as double;
+                          final totalGrams = gramWeight * quantity;
+
+                          // Calculate based on per 100g nutrition
+                          final multiplier = totalGrams / 100.0;
+
+                          final nutriments = selectedProduct!.nutriments;
+
+                          final entry = FoodEntry(
+                            id: DateTime.now()
+                                .millisecondsSinceEpoch
+                                .toString(),
+                            name: selectedProduct!.productName ??
+                                'Unknown Product',
+                            barcode: selectedProduct!.barcode,
+                            servingSize: totalGrams,
+                            servingUnit: 'g',
+                            calories:
+                                getNutrientValue(nutriments, 'energy-kcal') *
+                                    multiplier,
+                            protein: getNutrientValue(nutriments, 'proteins') *
+                                multiplier,
+                            carbs:
+                                getNutrientValue(nutriments, 'carbohydrates') *
+                                    multiplier,
+                            fat: getNutrientValue(nutriments, 'fat') *
+                                multiplier,
+                            fiber: getNutrientValue(nutriments, 'fiber') *
+                                multiplier,
+                            sugar: getNutrientValue(nutriments, 'sugars') *
+                                multiplier,
+                            sodium: getNutrientValue(nutriments, 'sodium') *
+                                multiplier *
+                                1000,
+                            saturatedFat:
+                                getNutrientValue(nutriments, 'saturated-fat') *
+                                    multiplier,
+                            photoUrl: selectedProduct!.imageFrontUrl,
+                            mealType: selectedMealType,
+                            timestamp: widget.selectedDate,
                           );
 
                           widget.onAdd(entry);
@@ -664,7 +815,6 @@ class _MealieTabState extends State<MealieTab> {
             ],
           ),
           const SizedBox(height: 16),
-
           if (errorMessage != null)
             Expanded(
               child: Center(
@@ -746,7 +896,6 @@ class _MealieTabState extends State<MealieTab> {
                       ),
                     ),
                     const SizedBox(height: 16),
-
                     const Text(
                       'Meal Type',
                       style: TextStyle(
@@ -768,7 +917,6 @@ class _MealieTabState extends State<MealieTab> {
                       }).toList(),
                     ),
                     const SizedBox(height: 16),
-
                     TextField(
                       controller: servingsController,
                       decoration: InputDecoration(
@@ -780,7 +928,6 @@ class _MealieTabState extends State<MealieTab> {
                       keyboardType: TextInputType.number,
                     ),
                     const SizedBox(height: 16),
-
                     if (selectedRecipe!['nutrition'] != null) ...[
                       const Text(
                         'Nutrition Facts',
@@ -822,7 +969,6 @@ class _MealieTabState extends State<MealieTab> {
                         ),
                       ),
                     const SizedBox(height: 16),
-
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
