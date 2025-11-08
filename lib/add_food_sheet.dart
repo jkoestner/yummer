@@ -26,6 +26,7 @@ class AddFoodSheet extends StatefulWidget {
 class _AddFoodSheetState extends State<AddFoodSheet>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final GlobalKey<_OpenFoodFactsTabState> _offTabKey = GlobalKey();
 
   @override
   void initState() {
@@ -73,6 +74,12 @@ class _AddFoodSheetState extends State<AddFoodSheet>
                     if (result['source'] == 'openfoodfacts') {
                       // Switch to OFF tab and select the product
                       _tabController.animateTo(3); // Open Food Facts tab index
+                      // Wait for tab animation to complete
+                      await Future.delayed(const Duration(milliseconds: 300));
+                      // Tell the OFF tab to display this product
+                      _offTabKey.currentState?.displayScannedProduct(
+                        result['product'] as Product,
+                      );
                     } else if (result['source'] == 'usda') {
                       // Switch to USDA tab (if you add one) or handle USDA product
                       // For now, we'll handle it in the current implementation
@@ -111,6 +118,7 @@ class _AddFoodSheetState extends State<AddFoodSheet>
                   selectedDate: widget.selectedDate,
                 ),
                 OpenFoodFactsTab(
+                  key: _offTabKey,
                   onAdd: widget.onAdd,
                   selectedDate: widget.selectedDate,
                 ),
@@ -127,7 +135,7 @@ class _AddFoodSheetState extends State<AddFoodSheet>
   }
 }
 
-// Open Food Facts Tab (unchanged from original)
+// Open Food Facts Tab (with barcode support)
 class OpenFoodFactsTab extends StatefulWidget {
   final Function(FoodEntry) onAdd;
   final DateTime selectedDate;
@@ -155,6 +163,17 @@ class _OpenFoodFactsTabState extends State<OpenFoodFactsTab> {
   bool isLoading = false;
   bool isSearching = false;
   String? errorMessage;
+
+  // NEW: Method to display scanned product
+  void displayScannedProduct(Product product) {
+    setState(() {
+      selectedProduct = product;
+      _processServingOptions(product);
+      isLoading = false;
+      isSearching = false;
+      errorMessage = null;
+    });
+  }
 
   void _processServingOptions(Product product) {
     servingOptions = [];
