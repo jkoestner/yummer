@@ -7,6 +7,7 @@ import 'custom_food_scanner.dart';
 import 'custom_foods_tab.dart';
 import 'custom_recipes_tab.dart';
 import 'barcode_scanner_page.dart';
+import 'recent_foods_tab.dart';
 
 // Main Add Food Sheet with 5 Tabs
 class AddFoodSheet extends StatefulWidget {
@@ -31,7 +32,7 @@ class _AddFoodSheetState extends State<AddFoodSheet>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
   }
 
   @override
@@ -72,8 +73,8 @@ class _AddFoodSheetState extends State<AddFoodSheet>
                   if (result != null && result is Map<String, dynamic>) {
                     // Handle scanned product
                     if (result['source'] == 'openfoodfacts') {
-                      // Switch to OFF tab and select the product
-                      _tabController.animateTo(3); // Open Food Facts tab index
+                      // Switch to OFF tab (now at index 4)
+                      _tabController.animateTo(4); // Open Food Facts tab index
                       // Wait for tab animation to complete
                       await Future.delayed(const Duration(milliseconds: 300));
                       // Tell the OFF tab to display this product
@@ -94,6 +95,7 @@ class _AddFoodSheetState extends State<AddFoodSheet>
             controller: _tabController,
             isScrollable: true,
             tabs: const [
+              Tab(icon: Icon(Icons.history), text: 'Recent'),
               Tab(icon: Icon(Icons.camera_alt), text: 'Scan Label'),
               Tab(icon: Icon(Icons.bookmark), text: 'My Foods'),
               Tab(icon: Icon(Icons.restaurant_menu), text: 'My Recipes'),
@@ -105,6 +107,10 @@ class _AddFoodSheetState extends State<AddFoodSheet>
             child: TabBarView(
               controller: _tabController,
               children: [
+                RecentFoodsTab(
+                  onAdd: widget.onAdd,
+                  selectedDate: widget.selectedDate,
+                ),
                 NutritionLabelScanner(
                   onAdd: widget.onAdd,
                   selectedDate: widget.selectedDate,
