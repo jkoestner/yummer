@@ -14,6 +14,8 @@ The web needs to disable web security if using mealie to avoid CORS issues.
 
 ## build apk
 
+update version in pubspec.yaml before building
+example: version: 1.0.0+1
 `flutter build apk --release`
 
 ## publish to play store
