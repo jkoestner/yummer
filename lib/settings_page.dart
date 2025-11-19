@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:share_plus/share_plus.dart';
+import 'dart:io';
 
 import 'models.dart';
 import 'storage_helper.dart';
@@ -743,9 +746,186 @@ class _SettingsPageState extends State<SettingsPage> {
                 );
               },
             ),
+
+            const SizedBox(height: 32),
+            const Divider(),
+            const SizedBox(height: 16),
+
+            // Data Management
+            const Text(
+              'Data Management',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Export your data before uninstalling to keep a backup. Import to restore your data.',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 16),
+
+            Card(
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.file_download, color: Colors.blue),
+                    title: const Text('Export Data'),
+                    subtitle: const Text(
+                      'Save all your data to a file',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _exportData(context),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.file_upload, color: Colors.orange),
+                    title: const Text('Import Data'),
+                    subtitle: const Text(
+                      'Restore data from a backup file',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _importData(context),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _exportData(BuildContext context) async {
+    try {
+      // Show loading dialog
+      if (!context.mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Export data
+      final file = await StorageHelper.instance.exportAllData();
+
+      // Close loading dialog
+      if (!context.mounted) return;
+      Navigator.pop(context);
+
+      // Share the file
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'Yummer Data Backup',
+        text: 'Your Yummer nutrition tracking data backup',
+      );
+
+      // Show success message
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Data exported successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      // Close loading dialog if it's open
+      if (context.mounted) Navigator.pop(context);
+
+      // Show error message
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Export failed: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _importData(BuildContext context) async {
+    try {
+      // Show confirmation dialog
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Import Data'),
+          content: const Text(
+            'This will replace all your current data with the data from the backup file. '
+            'Make sure you have a recent backup before proceeding.\n\n'
+            'Do you want to continue?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Import'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) return;
+
+      // Pick file
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+
+      if (result == null || result.files.single.path == null) {
+        return;
+      }
+
+      // Show loading dialog
+      if (!context.mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Read file
+      final file = File(result.files.single.path!);
+      final jsonString = await file.readAsString();
+
+      // Clear existing data and import
+      await StorageHelper.instance.clearAllDataComplete();
+      await StorageHelper.instance.importAllData(jsonString);
+
+      // Close loading dialog
+      if (!context.mounted) return;
+      Navigator.pop(context);
+
+      // Show success message
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Data imported successfully! Please restart the app.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 5),
+        ),
+      );
+
+      // Navigate back to force refresh
+      Navigator.pop(context);
+    } catch (e) {
+      // Close loading dialog if it's open
+      if (context.mounted) Navigator.pop(context);
+
+      // Show error message
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Import failed: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
