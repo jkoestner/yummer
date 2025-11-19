@@ -1,4 +1,7 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:path_provider/path_provider.dart';
 import 'models.dart';
 
 class StorageHelper {
@@ -126,6 +129,121 @@ class StorageHelper {
       print('USDA API key saved');
     } catch (e) {
       print('Error saving USDA API key: $e');
+    }
+  }
+
+  // Export all data to JSON file
+  Future<File> exportAllData() async {
+    try {
+      // Get all data from Hive boxes
+      final foodEntriesBox = Hive.box(_entriesBoxName);
+      final goalsBox = Hive.box(_goalsBoxName);
+      final customFoodsBox = Hive.box(_customFoodsBoxName);
+      final customRecipesBox = Hive.box(_customRecipesBoxName);
+
+      // Create export data structure
+      final exportData = {
+        'version': '1.0',
+        'exportDate': DateTime.now().toIso8601String(),
+        'foodEntries': foodEntriesBox.toMap(),
+        'dailyGoals': goalsBox.toMap(),
+        'customFoods': customFoodsBox.toMap(),
+        'customRecipes': customRecipesBox.toMap(),
+      };
+
+      // Convert to JSON
+      final jsonString = jsonEncode(exportData);
+
+      // Save to temporary file
+      final directory = await getTemporaryDirectory();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final file = File('${directory.path}/yummer_backup_$timestamp.json');
+      await file.writeAsString(jsonString);
+
+      print('Data exported to: ${file.path}');
+      return file;
+    } catch (e) {
+      print('Error exporting data: $e');
+      rethrow;
+    }
+  }
+
+  // Import data from JSON file
+  Future<void> importAllData(String jsonString) async {
+    try {
+      // Parse JSON
+      final data = jsonDecode(jsonString) as Map<String, dynamic>;
+
+      // Validate version (for future compatibility)
+      final version = data['version'] as String?;
+      print('Importing data version: $version');
+
+      // Get boxes
+      final foodEntriesBox = Hive.box(_entriesBoxName);
+      final goalsBox = Hive.box(_goalsBoxName);
+      final customFoodsBox = Hive.box(_customFoodsBoxName);
+      final customRecipesBox = Hive.box(_customRecipesBoxName);
+
+      // Import food entries
+      if (data['foodEntries'] != null) {
+        final entries = data['foodEntries'] as Map<String, dynamic>;
+        for (var entry in entries.entries) {
+          await foodEntriesBox.put(entry.key, entry.value);
+        }
+        print('Imported ${entries.length} food entries');
+      }
+
+      // Import daily goals
+      if (data['dailyGoals'] != null) {
+        final goals = data['dailyGoals'] as Map<String, dynamic>;
+        for (var goal in goals.entries) {
+          await goalsBox.put(goal.key, goal.value);
+        }
+        print('Imported ${goals.length} daily goals/settings');
+      }
+
+      // Import custom foods
+      if (data['customFoods'] != null) {
+        final foods = data['customFoods'] as Map<String, dynamic>;
+        for (var food in foods.entries) {
+          await customFoodsBox.put(food.key, food.value);
+        }
+        print('Imported ${foods.length} custom foods');
+      }
+
+      // Import custom recipes
+      if (data['customRecipes'] != null) {
+        final recipes = data['customRecipes'] as Map<String, dynamic>;
+        for (var recipe in recipes.entries) {
+          await customRecipesBox.put(recipe.key, recipe.value);
+        }
+        print('Imported ${recipes.length} custom recipes');
+      }
+
+      print('Data import completed successfully');
+    } catch (e) {
+      print('Error importing data: $e');
+      rethrow;
+    }
+  }
+
+  // Clear all data (useful before import to avoid conflicts)
+  Future<void> clearAllDataComplete() async {
+    try {
+      final foodEntriesBox = Hive.box(_entriesBoxName);
+      final goalsBox = Hive.box(_goalsBoxName);
+      final customFoodsBox = Hive.box(_customFoodsBoxName);
+      final customRecipesBox = Hive.box(_customRecipesBoxName);
+
+      await foodEntriesBox.clear();
+      await goalsBox.clear();
+      await customFoodsBox.clear();
+      await customRecipesBox.clear();
+
+      print('All data cleared');
+    } catch (e) {
+      print('Error clearing data: $e');
+      rethrow;
     }
   }
 }
