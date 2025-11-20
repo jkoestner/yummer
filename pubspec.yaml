@@ -32,6 +32,9 @@ dependencies:
   path_provider: ^2.1.5
   share_plus: ^10.1.2
 
+  # OpenAI API for AI-powered food entry
+  dart_openai: ^5.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

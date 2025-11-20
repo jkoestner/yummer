@@ -10,6 +10,7 @@ import 'storage_helper.dart';
 import 'add_food_sheet.dart';
 import 'settings_page.dart';
 import 'usda_service.dart';
+import 'openai_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +20,9 @@ void main() async {
 
   // Initialize USDA service (loads API key from storage)
   await USDAService.init();
+
+  // Initialize OpenAI service (loads API key from storage)
+  await OpenAIService.init();
 
   OpenFoodAPIConfiguration.userAgent = UserAgent(
     name: 'Nutrition Tracker',

@@ -132,6 +132,25 @@ class StorageHelper {
     }
   }
 
+  // OpenAI API key storage
+  Future<String?> getOpenAIApiKey() async {
+    try {
+      return _goalsBox.get('openai_api_key');
+    } catch (e) {
+      print('Error loading OpenAI API key: $e');
+      return null;
+    }
+  }
+
+  Future<void> setOpenAIApiKey(String apiKey) async {
+    try {
+      await _goalsBox.put('openai_api_key', apiKey);
+      print('OpenAI API key saved');
+    } catch (e) {
+      print('Error saving OpenAI API key: $e');
+    }
+  }
+
   // Export all data to JSON file
   Future<File> exportAllData() async {
     try {

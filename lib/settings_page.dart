@@ -7,6 +7,7 @@ import 'models.dart';
 import 'storage_helper.dart';
 import 'mealie_service.dart';
 import 'usda_service.dart';
+import 'openai_service.dart';
 
 // USDA Settings Page
 class USDASettingsPage extends StatefulWidget {
@@ -270,6 +271,354 @@ class _USDASettingsPageState extends State<USDASettingsPage> {
             height: 32,
             decoration: BoxDecoration(
               color: Colors.blue,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: Text(
+                number,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBullet(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('• ', style: TextStyle(fontSize: 16)),
+          Expanded(child: Text(text)),
+        ],
+      ),
+    );
+  }
+}
+
+// OpenAI Settings Page
+class OpenAISettingsPage extends StatefulWidget {
+  const OpenAISettingsPage({Key? key}) : super(key: key);
+
+  @override
+  State<OpenAISettingsPage> createState() => _OpenAISettingsPageState();
+}
+
+class _OpenAISettingsPageState extends State<OpenAISettingsPage> {
+  late TextEditingController apiKeyController;
+  bool isTesting = false;
+  String? testResult;
+
+  @override
+  void initState() {
+    super.initState();
+    apiKeyController = TextEditingController();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final apiKey = await _getStoredApiKey();
+    setState(() {
+      apiKeyController.text = apiKey ?? '';
+    });
+
+    // Set the API key in the service
+    if (apiKey != null && apiKey.isNotEmpty) {
+      OpenAIService.setApiKey(apiKey);
+    }
+  }
+
+  Future<String?> _getStoredApiKey() async {
+    try {
+      return await StorageHelper.instance.getOpenAIApiKey();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> _saveApiKey(String apiKey) async {
+    await StorageHelper.instance.setOpenAIApiKey(apiKey);
+    OpenAIService.setApiKey(apiKey);
+  }
+
+  Future<void> _testConnection() async {
+    final apiKey = apiKeyController.text.trim();
+    if (apiKey.isEmpty) {
+      setState(() {
+        testResult = '❌ Please enter an API key';
+      });
+      return;
+    }
+
+    setState(() {
+      isTesting = true;
+      testResult = null;
+    });
+
+    try {
+      // Save and set the API key first
+      await _saveApiKey(apiKey);
+
+      // Test with a simple food estimation
+      final result = await OpenAIService.estimateFoodNutrition('apple');
+
+      setState(() {
+        if (result != null) {
+          testResult = '✅ Connection successful! API is working correctly.';
+        } else {
+          testResult = '❌ Connection succeeded but could not parse response';
+        }
+        isTesting = false;
+      });
+    } catch (e) {
+      setState(() {
+        testResult = '❌ Connection failed: ${e.toString().replaceFirst('Exception: ', '')}';
+        isTesting = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('OpenAI Settings')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'OpenAI API',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Use AI to estimate nutritional information for custom foods.',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 24),
+
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.purple[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.purple[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.purple[700]),
+                      const SizedBox(width: 8),
+                      Text(
+                        'AI-Powered Nutrition',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.purple[900],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Enter any food description and AI will estimate the nutritional values. '
+                    'Perfect for custom or restaurant foods.',
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            TextField(
+              controller: apiKeyController,
+              decoration: const InputDecoration(
+                labelText: 'API Key',
+                hintText: 'Your OpenAI API key',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.vpn_key),
+                helperText: 'Get your API key at platform.openai.com',
+              ),
+              obscureText: true,
+            ),
+            const SizedBox(height: 24),
+
+            if (testResult != null)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: testResult!.startsWith('✅')
+                      ? Colors.green[50]
+                      : Colors.red[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: testResult!.startsWith('✅')
+                        ? Colors.green[200]!
+                        : Colors.red[200]!,
+                  ),
+                ),
+                child: Text(testResult!),
+              ),
+
+            const SizedBox(height: 16),
+
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: isTesting ? null : _testConnection,
+                    icon: isTesting
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.check_circle),
+                    label: Text(isTesting ? 'Testing...' : 'Test Connection'),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      await _saveApiKey(apiKeyController.text.trim());
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('API key saved!')),
+                        );
+                        Navigator.pop(context);
+                      }
+                    },
+                    icon: const Icon(Icons.save),
+                    label: const Text('Save'),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 32),
+            const Divider(),
+            const SizedBox(height: 16),
+
+            const Text(
+              'How to get your API key:',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+
+            _buildStep(
+              '1',
+              'Visit OpenAI Platform',
+              'https://platform.openai.com/api-keys',
+            ),
+            _buildStep('2', 'Sign up or log in', 'Create an account if you don\'t have one'),
+            _buildStep('3', 'Create a new API key', 'Click "Create new secret key"'),
+            _buildStep('4', 'Copy the API key', 'Paste it in the field above'),
+            _buildStep('5', 'Test the connection', 'Click "Test Connection" to verify'),
+
+            const SizedBox(height: 24),
+
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Features:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildBullet('AI-powered nutrition estimation'),
+                  _buildBullet('Works for any food description'),
+                  _buildBullet('Estimates when exact data unavailable'),
+                  _buildBullet('Perfect for restaurant or homemade foods'),
+                  _buildBullet('Uses GPT-3.5-turbo for cost efficiency'),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.warning_amber, color: Colors.orange[700]),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Note about costs',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange[900],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'OpenAI API charges per use. Each food estimation costs approximately \$0.001-0.002. '
+                    'Monitor your usage at platform.openai.com.',
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStep(String number, String title, String subtitle) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.purple,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Center(
@@ -742,6 +1091,23 @@ class _SettingsPageState extends State<SettingsPage> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const MealieSettingsPage(),
+                  ),
+                );
+              },
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.auto_awesome, color: Colors.purple),
+              title: const Text('OpenAI Integration'),
+              subtitle: const Text(
+                'AI-powered nutrition estimation for custom foods',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const OpenAISettingsPage(),
                   ),
                 );
               },

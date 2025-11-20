@@ -8,6 +8,7 @@ import 'custom_foods_tab.dart';
 import 'custom_recipes_tab.dart';
 import 'barcode_scanner_page.dart';
 import 'recent_foods_tab.dart';
+import 'ai_food_tab.dart';
 
 // Main Add Food Sheet with 5 Tabs
 class AddFoodSheet extends StatefulWidget {
@@ -32,7 +33,7 @@ class _AddFoodSheetState extends State<AddFoodSheet>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
   }
 
   @override
@@ -101,6 +102,7 @@ class _AddFoodSheetState extends State<AddFoodSheet>
               Tab(icon: Icon(Icons.restaurant_menu), text: 'My Recipes'),
               Tab(icon: Icon(Icons.public), text: 'Open Food Facts'),
               Tab(icon: Icon(Icons.menu_book), text: 'Mealie'),
+              Tab(icon: Icon(Icons.auto_awesome), text: 'AI Food'),
             ],
           ),
           Expanded(
@@ -129,6 +131,10 @@ class _AddFoodSheetState extends State<AddFoodSheet>
                   selectedDate: widget.selectedDate,
                 ),
                 MealieTab(
+                  onAdd: widget.onAdd,
+                  selectedDate: widget.selectedDate,
+                ),
+                AIFoodTab(
                   onAdd: widget.onAdd,
                   selectedDate: widget.selectedDate,
                 ),
