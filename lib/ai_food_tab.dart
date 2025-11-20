@@ -66,6 +66,7 @@ class _AIFoodTabState extends State<AIFoodTab> {
     final servings = double.tryParse(servingsController.text) ?? 1.0;
 
     final entry = FoodEntry(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: nutritionData!['name'] as String,
       timestamp: widget.selectedDate,
       mealType: selectedMealType,
