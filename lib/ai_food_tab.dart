@@ -158,226 +158,226 @@ class _AIFoodTabState extends State<AIFoodTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-          // Info card
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.purple[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.purple[200]!),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.auto_awesome, color: Colors.purple[700]),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Enter any food description and AI will estimate nutritional values',
-                    style: TextStyle(fontSize: 13, color: Colors.purple[900]),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Food description input
-          TextField(
-            controller: foodQueryController,
-            decoration: const InputDecoration(
-              labelText: 'Food Description',
-              hintText: 'e.g., grilled chicken breast, 1 slice pizza',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.restaurant),
-            ),
-            onSubmitted: (_) => _estimateNutrition(),
-          ),
-          const SizedBox(height: 16),
-
-          // Estimate button
-          ElevatedButton.icon(
-            onPressed: isLoading ? null : _estimateNutrition,
-            icon: isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.psychology),
-            label: Text(isLoading ? 'Estimating...' : 'Estimate Nutrition'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.all(16),
-              backgroundColor: Colors.purple,
-              foregroundColor: Colors.white,
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Error message
-          if (errorMessage != null)
+            // Info card
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.red[50],
+                color: Colors.purple[50],
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red[200]!),
+                border: Border.all(color: Colors.purple[200]!),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.error_outline, color: Colors.red[700]),
+                  Icon(Icons.auto_awesome, color: Colors.purple[700]),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      errorMessage!,
-                      style: TextStyle(color: Colors.red[900]),
+                      'Enter any food description and AI will estimate nutritional values',
+                      style: TextStyle(fontSize: 13, color: Colors.purple[900]),
                     ),
                   ),
                 ],
               ),
             ),
-
-          // Nutrition results
-          if (nutritionData != null) ...[
-            const Divider(),
-            const SizedBox(height: 8),
-
-            Text(
-              nutritionData!['name'] as String,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Per serving',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
             const SizedBox(height: 16),
 
-            // Nutrition grid
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                children: [
-                  _buildNutrientRow('Calories', '${nutritionData!['calories'].toStringAsFixed(0)} kcal'),
-                  const Divider(),
-                  _buildNutrientRow('Protein', '${nutritionData!['protein'].toStringAsFixed(1)}g'),
-                  _buildNutrientRow('Carbs', '${nutritionData!['carbs'].toStringAsFixed(1)}g'),
-                  _buildNutrientRow('Fat', '${nutritionData!['fat'].toStringAsFixed(1)}g'),
-                  _buildNutrientRow('Fiber', '${nutritionData!['fiber'].toStringAsFixed(1)}g'),
-                  _buildNutrientRow('Sugar', '${nutritionData!['sugar'].toStringAsFixed(1)}g'),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Servings input
+            // Food description input
             TextField(
-              controller: servingsController,
+              controller: foodQueryController,
               decoration: const InputDecoration(
-                labelText: 'Servings',
+                labelText: 'Food Description',
+                hintText: 'e.g., grilled chicken breast, 1 slice pizza',
                 border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.numbers),
+                prefixIcon: Icon(Icons.restaurant),
               ),
-              keyboardType: TextInputType.number,
+              onSubmitted: (_) => _estimateNutrition(),
+            ),
+            const SizedBox(height: 16),
+
+            // Estimate button
+            ElevatedButton.icon(
+              onPressed: isLoading ? null : _estimateNutrition,
+              icon: isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.psychology),
+              label: Text(isLoading ? 'Estimating...' : 'Estimate Nutrition'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.all(16),
+                backgroundColor: Colors.purple,
+                foregroundColor: Colors.white,
+              ),
             ),
 
             const SizedBox(height: 16),
 
-            // Meal type selector
-            DropdownButtonFormField<MealType>(
-              value: selectedMealType,
-              decoration: const InputDecoration(
-                labelText: 'Meal Type',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.calendar_today),
-              ),
-              items: MealType.values.map((type) {
-                return DropdownMenuItem(
-                  value: type,
-                  child: Row(
-                    children: [
-                      Icon(type.icon, size: 20, color: type.color),
-                      const SizedBox(width: 8),
-                      Text(type.displayName),
-                    ],
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    selectedMealType = value;
-                  });
-                }
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Action buttons
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _saveAsCustomFood,
-                    icon: const Icon(Icons.bookmark_add),
-                    label: const Text('Save as Custom Food'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.all(16),
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
+            // Error message
+            if (errorMessage != null)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red[200]!),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _addFood,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add to Log'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.all(16),
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, color: Colors.red[700]),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        errorMessage!,
+                        style: TextStyle(color: Colors.red[900]),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 8),
-
-            // Disclaimer
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange[200]!),
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+
+            // Nutrition results
+            if (nutritionData != null) ...[
+              const Divider(),
+              const SizedBox(height: 8),
+
+              Text(
+                nutritionData!['name'] as String,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Per serving',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 16),
+
+              // Nutrition grid
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    _buildNutrientRow('Calories', '${nutritionData!['calories'].toStringAsFixed(0)} kcal'),
+                    const Divider(),
+                    _buildNutrientRow('Protein', '${nutritionData!['protein'].toStringAsFixed(1)}g'),
+                    _buildNutrientRow('Carbs', '${nutritionData!['carbs'].toStringAsFixed(1)}g'),
+                    _buildNutrientRow('Fat', '${nutritionData!['fat'].toStringAsFixed(1)}g'),
+                    _buildNutrientRow('Fiber', '${nutritionData!['fiber'].toStringAsFixed(1)}g'),
+                    _buildNutrientRow('Sugar', '${nutritionData!['sugar'].toStringAsFixed(1)}g'),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Servings input
+              TextField(
+                controller: servingsController,
+                decoration: const InputDecoration(
+                  labelText: 'Servings',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.numbers),
+                ),
+                keyboardType: TextInputType.number,
+              ),
+
+              const SizedBox(height: 16),
+
+              // Meal type selector
+              DropdownButtonFormField<MealType>(
+                value: selectedMealType,
+                decoration: const InputDecoration(
+                  labelText: 'Meal Type',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.calendar_today),
+                ),
+                items: MealType.values.map((type) {
+                  return DropdownMenuItem(
+                    value: type,
+                    child: Row(
+                      children: [
+                        Icon(type.icon, size: 20, color: type.color),
+                        const SizedBox(width: 8),
+                        Text(type.displayName),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      selectedMealType = value;
+                    });
+                  }
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // Action buttons
+              Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.orange[700], size: 20),
-                  const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
-                      'Note: Nutrition values are AI-estimated and may not be exact. For precise tracking, use barcode scanning or verified databases.',
-                      style: TextStyle(fontSize: 12, color: Colors.orange[900]),
+                    child: ElevatedButton.icon(
+                      onPressed: _saveAsCustomFood,
+                      icon: const Icon(Icons.bookmark_add),
+                      label: const Text('Save as Custom Food'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.all(16),
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _addFood,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add to Log'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.all(16),
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
+
+              const SizedBox(height: 8),
+
+              // Disclaimer
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange[200]!),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.orange[700], size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Note: Nutrition values are AI-estimated and may not be exact. For precise tracking, use barcode scanning or verified databases.',
+                        style: TextStyle(fontSize: 12, color: Colors.orange[900]),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
         ),
       ),
     );
