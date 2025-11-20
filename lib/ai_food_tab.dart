@@ -378,6 +378,7 @@ class _AIFoodTabState extends State<AIFoodTab> {
                 ),
               ),
             ],
+          ],
         ),
       ),
     );
