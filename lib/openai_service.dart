@@ -37,7 +37,7 @@ food, calories: <calories>, protein: <protein>, carbs: <carbs>, fat: <fat>, fibe
 Important:
 - Provide only the formatted output, no additional text
 - Use numeric values only (no units)
-- Values should be per 100g serving
+- Values should be per 1 serving (interpret the food query as 1 serving)
 - If you cannot find exact information, provide reasonable approximations based on similar foods''';
 
       final response = await http
@@ -139,8 +139,8 @@ Important:
         'fat': fat,
         'fiber': fiber,
         'sugar': sugar,
-        'servingSize': 100.0,
-        'servingUnit': 'g',
+        'servingSize': 1.0,
+        'servingUnit': 'serving',
         'sodium': 0.0, // Not included in basic prompt, can be extended
         'saturatedFat': 0.0, // Not included in basic prompt, can be extended
         'source': 'OpenAI',

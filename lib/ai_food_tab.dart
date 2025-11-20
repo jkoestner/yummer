@@ -251,7 +251,7 @@ class _AIFoodTabState extends State<AIFoodTab> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Per ${nutritionData!['servingSize']}${nutritionData!['servingUnit']}',
+              'Per serving',
               style: TextStyle(color: Colors.grey[600]),
             ),
             const SizedBox(height: 16),
