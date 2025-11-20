@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'models.dart';
 import 'openai_service.dart';
+import 'custom_foods_manager.dart';
 
 class AIFoodTab extends StatefulWidget {
   final Function(FoodEntry) onAdd;
@@ -60,6 +61,58 @@ class _AIFoodTabState extends State<AIFoodTab> {
     }
   }
 
+  Future<void> _saveAsCustomFood() async {
+    if (nutritionData == null) return;
+
+    try {
+      final customFood = CustomFood(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: nutritionData!['name'] as String,
+        brand: 'AI Estimated',
+        servingSize: nutritionData!['servingSize'] as double,
+        servingUnit: nutritionData!['servingUnit'] as String,
+        calories: nutritionData!['calories'] as double,
+        protein: nutritionData!['protein'] as double,
+        carbs: nutritionData!['carbs'] as double,
+        fat: nutritionData!['fat'] as double,
+        fiber: nutritionData!['fiber'] as double,
+        sugar: nutritionData!['sugar'] as double,
+        sodium: nutritionData!['sodium'] as double,
+        saturatedFat: nutritionData!['saturatedFat'] as double,
+        createdAt: DateTime.now(),
+      );
+
+      await CustomFoodsManager.instance.saveCustomFood(customFood);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Saved as custom food! Find it in the "My Foods" tab.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+
+      // Clear the form
+      setState(() {
+        foodQueryController.clear();
+        servingsController.text = '1.0';
+        nutritionData = null;
+        errorMessage = null;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving custom food: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   void _addFood() {
     if (nutritionData == null) return;
 
@@ -99,11 +152,12 @@ class _AIFoodTabState extends State<AIFoodTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
           // Info card
           Container(
             padding: const EdgeInsets.all(12),
@@ -268,16 +322,35 @@ class _AIFoodTabState extends State<AIFoodTab> {
 
             const SizedBox(height: 16),
 
-            // Add to log button
-            ElevatedButton.icon(
-              onPressed: _addFood,
-              icon: const Icon(Icons.add),
-              label: const Text('Add to Food Log'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.all(16),
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-              ),
+            // Action buttons
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _saveAsCustomFood,
+                    icon: const Icon(Icons.bookmark_add),
+                    label: const Text('Save as Custom Food'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _addFood,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add to Log'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(height: 8),
@@ -305,7 +378,7 @@ class _AIFoodTabState extends State<AIFoodTab> {
               ),
             ),
           ],
-        ],
+        ),
       ),
     );
   }
