@@ -59,6 +59,15 @@ class StorageHelper {
     }).toList();
   }
 
+  Future<void> updateFoodEntry(FoodEntry entry) async {
+    try {
+      await _entriesBox.put(entry.id, entry.toMap());
+      print('Entry updated: ${entry.name}');
+    } catch (e) {
+      print('Error updating entry: $e');
+    }
+  }
+
   Future<void> deleteFoodEntry(String id) async {
     try {
       await _entriesBox.delete(id);

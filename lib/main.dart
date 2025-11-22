@@ -8,6 +8,7 @@ import 'package:hive/hive.dart';
 import 'models.dart';
 import 'storage_helper.dart';
 import 'add_food_sheet.dart';
+import 'edit_entry_dialog.dart';
 import 'settings_page.dart';
 import 'usda_service.dart';
 import 'openai_service.dart';
@@ -156,6 +157,18 @@ class _HomePageState extends State<HomePage> {
   Future<void> _deleteEntry(String id) async {
     await StorageHelper.instance.deleteFoodEntry(id);
     await _loadData();
+  }
+
+  Future<void> _editEntry(FoodEntry entry) async {
+    final result = await showDialog<FoodEntry>(
+      context: context,
+      builder: (context) => EditEntryDialog(entry: entry),
+    );
+
+    if (result != null) {
+      await StorageHelper.instance.updateFoodEntry(result);
+      await _loadData();
+    }
   }
 
   void _changeDate(int days) {
@@ -450,9 +463,18 @@ class _HomePageState extends State<HomePage> {
                 'P: ${entry.protein.toStringAsFixed(1)}g C: ${entry.carbs.toStringAsFixed(1)}g F: ${entry.fat.toStringAsFixed(1)}g',
               ),
               isThreeLine: true,
-              trailing: IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
-                onPressed: () => _deleteEntry(entry.id),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.blue),
+                    onPressed: () => _editEntry(entry),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _deleteEntry(entry.id),
+                  ),
+                ],
               ),
             ),
           ),
