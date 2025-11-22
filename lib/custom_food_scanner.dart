@@ -7,6 +7,21 @@ import 'custom_food_parser.dart';
 import 'custom_foods_manager.dart';
 import 'models.dart';
 
+// Helper class to store text with spatial information
+class _TextBlock {
+  final String text;
+  final double verticalPosition;
+  final double horizontalPosition;
+  final double confidence;
+
+  _TextBlock({
+    required this.text,
+    required this.verticalPosition,
+    required this.horizontalPosition,
+    required this.confidence,
+  });
+}
+
 class NutritionLabelScanner extends StatefulWidget {
   final Function(FoodEntry) onAdd;
   final DateTime selectedDate;
@@ -75,7 +90,8 @@ class _NutritionLabelScannerState extends State<NutritionLabelScanner> {
 
       final XFile? photo = await _picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 85,
+        imageQuality: 100,
+        preferredCameraDevice: CameraDevice.rear,
       );
 
       if (photo == null) {
@@ -106,7 +122,10 @@ class _NutritionLabelScannerState extends State<NutritionLabelScanner> {
         errorMessage = null;
       });
 
-      final XFile? photo = await _picker.pickImage(source: ImageSource.gallery);
+      final XFile? photo = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 100,
+      );
 
       if (photo == null) {
         setState(() {
@@ -136,12 +155,7 @@ class _NutritionLabelScannerState extends State<NutritionLabelScanner> {
         inputImage,
       );
 
-      final text = recognizedText.text;
-      setState(() {
-        extractedText = text;
-      });
-
-      if (text.isEmpty) {
+      if (recognizedText.blocks.isEmpty) {
         setState(() {
           errorMessage =
               'No text found in image. Please try again with better lighting.';
@@ -150,24 +164,94 @@ class _NutritionLabelScannerState extends State<NutritionLabelScanner> {
         return;
       }
 
+      // Extract text blocks with spatial information
+      final blocks = <_TextBlock>[];
+      for (final block in recognizedText.blocks) {
+        for (final line in block.lines) {
+          // Calculate vertical position (top of bounding box)
+          final box = line.boundingBox;
+          final verticalPos = box.top.toDouble();
+          final horizontalPos = box.left.toDouble();
+
+          blocks.add(_TextBlock(
+            text: line.text,
+            verticalPosition: verticalPos,
+            horizontalPosition: horizontalPos,
+            confidence: line.confidence ?? 1.0,
+          ));
+        }
+      }
+
+      // Sort blocks by vertical position (top to bottom), then horizontal (left to right)
+      blocks.sort((a, b) {
+        // Group lines that are roughly on the same vertical level
+        const verticalThreshold = 20.0;
+        if ((a.verticalPosition - b.verticalPosition).abs() < verticalThreshold) {
+          // If on same line, sort left to right
+          return a.horizontalPosition.compareTo(b.horizontalPosition);
+        }
+        // Otherwise sort top to bottom
+        return a.verticalPosition.compareTo(b.verticalPosition);
+      });
+
+      // Filter out low confidence text (optional - helps reduce noise)
+      final filteredBlocks = blocks.where((b) => b.confidence > 0.5).toList();
+
+      // Build structured text maintaining spatial relationships
+      final structuredText = filteredBlocks.map((b) => b.text).join('\n');
+
+      setState(() {
+        extractedText = structuredText;
+      });
+
+      if (structuredText.isEmpty) {
+        setState(() {
+          errorMessage =
+              'Could not extract readable text. Please try again with better image quality.';
+          isProcessing = false;
+        });
+        return;
+      }
+
       // Parse nutrition data
-      final nutritionData = NutritionLabelParser.parseNutritionText(text);
-      final productName = NutritionLabelParser.extractProductName(text);
+      final nutritionData = NutritionLabelParser.parseNutritionText(structuredText);
+      final productName = NutritionLabelParser.extractProductName(structuredText);
 
       // Pre-fill form with parsed data
       setState(() {
-        if (productName != null) {
+        if (productName != null && productName.isNotEmpty) {
           nameController.text = productName;
         }
-        servingSizeController.text = nutritionData['servingSize']!.toString();
-        caloriesController.text = nutritionData['calories']!.toString();
-        proteinController.text = nutritionData['protein']!.toString();
-        carbsController.text = nutritionData['carbs']!.toString();
-        fatController.text = nutritionData['fat']!.toString();
-        fiberController.text = nutritionData['fiber']!.toString();
-        sugarController.text = nutritionData['sugar']!.toString();
-        sodiumController.text = nutritionData['sodium']!.toString();
-        saturatedFatController.text = nutritionData['saturatedFat']!.toString();
+
+        // Only set non-zero values to avoid overwriting user edits with 0.0
+        if (nutritionData['servingSize']! > 0) {
+          servingSizeController.text = nutritionData['servingSize']!.toStringAsFixed(1);
+        }
+        if (nutritionData['calories']! > 0) {
+          caloriesController.text = nutritionData['calories']!.toStringAsFixed(0);
+        }
+        if (nutritionData['protein']! > 0) {
+          proteinController.text = nutritionData['protein']!.toStringAsFixed(1);
+        }
+        if (nutritionData['carbs']! > 0) {
+          carbsController.text = nutritionData['carbs']!.toStringAsFixed(1);
+        }
+        if (nutritionData['fat']! > 0) {
+          fatController.text = nutritionData['fat']!.toStringAsFixed(1);
+        }
+        if (nutritionData['fiber']! > 0) {
+          fiberController.text = nutritionData['fiber']!.toStringAsFixed(1);
+        }
+        if (nutritionData['sugar']! > 0) {
+          sugarController.text = nutritionData['sugar']!.toStringAsFixed(1);
+        }
+        if (nutritionData['sodium']! > 0) {
+          sodiumController.text = nutritionData['sodium']!.toStringAsFixed(0);
+        }
+        if (nutritionData['saturatedFat']! > 0) {
+          saturatedFatController.text = nutritionData['saturatedFat']!.toStringAsFixed(1);
+        }
+
         isProcessing = false;
       });
     } catch (e) {
@@ -378,6 +462,35 @@ class _NutritionLabelScannerState extends State<NutritionLabelScanner> {
                       ],
                     ),
                     const Divider(),
+
+                    // Debug: Show extracted text
+                    if (extractedText != null && extractedText!.isNotEmpty)
+                      ExpansionTile(
+                        title: const Text(
+                          'View Extracted Text (Debug)',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey[300]!),
+                            ),
+                            child: Text(
+                              extractedText!,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    const SizedBox(height: 8),
 
                     // Product info
                     TextField(
